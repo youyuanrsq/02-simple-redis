@@ -6,6 +6,7 @@ use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 use thiserror::Error;
 
+// you could also use once_cell instead of lazy_static
 lazy_static! {
     static ref RESP_OK: RespFrame = SimpleString::new("OK").into();
 }
@@ -28,8 +29,8 @@ pub trait CommandExecutor {
     fn execute(self, backend: &Backend) -> RespFrame;
 }
 
-#[derive(Debug)]
 #[enum_dispatch(CommandExecutor)]
+#[derive(Debug)]
 pub enum Command {
     Get(Get),
     Set(Set),
@@ -68,6 +69,7 @@ pub struct HSet {
 #[derive(Debug)]
 pub struct HGetAll {
     key: String,
+    sort: bool,
 }
 
 #[derive(Debug)]
@@ -77,7 +79,7 @@ impl TryFrom<RespFrame> for Command {
     type Error = CommandError;
     fn try_from(v: RespFrame) -> Result<Self, Self::Error> {
         match v {
-            RespFrame::Array(value) => value.try_into(),
+            RespFrame::Array(array) => array.try_into(),
             _ => Err(CommandError::InvalidCommand(
                 "Command must be an Array".to_string(),
             )),
